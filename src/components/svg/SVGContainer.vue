@@ -31,7 +31,7 @@ gsap.registerPlugin(Draggable);
 
 export default {
   name: "Container",
-  props: ["paths"],
+  props: ["elements"],
   components: {
     SVGPath,
     SVGTransformer,
