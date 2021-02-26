@@ -3,8 +3,7 @@
     :ref="params.id"
     :d="params.d"
     :transform="params.transform || 'matrix(1,0,0,1,0,0)'"
-    :fill="params.selected ? 'black' : 'red'"
-    @click="select"
+    fill="red"
   />
 </template>
 
@@ -15,7 +14,12 @@ import { Draggable } from "gsap/Draggable";
 gsap.registerPlugin(Draggable);
 
 export default {
-  props: ["params", "container_params"],
+  props: ["params", "container_params", "selected"],
+  data() {
+    return {
+      draggable: false,
+    };
+  },
   created() {
     // if no current transform, put it in the middle of the viewbox
     if (!this.params.transform) {
@@ -40,15 +44,52 @@ export default {
   },
   mounted() {
     const this_path = this.$refs[this.params.id];
-
     Draggable.create(this_path, {
       type: "x,y",
       minimumMovement: 0.000000000001,
+      onDrag: this.updateTransformDrag,
     });
+    // Draggable.create(this_path, {
+    //   type: "rotation",
+    //   minimumMovement: 0.000000000001,
+    //   onDrag: this.updateTransformDrag,
+    //   transformOrigin: "50 50",
+    // });
+    Draggable.get(this_path).disable();
+  },
+  watch: {
+    selected: function (is_selected) {
+      const this_path = this.$refs[this.params.id];
+      if (is_selected) {
+        Draggable.get(this_path).enable();
+      } else {
+        Draggable.get(this_path).disable();
+      }
+    },
   },
   methods: {
-    select() {
-      this.$emit("selected");
+    updateTransformDrag() {
+      const this_path = this.$refs[this.params.id];
+      const transform_matrix = this_path.transform.baseVal[0].matrix;
+      const transform =
+        "matrix(" +
+        transform_matrix.a +
+        "," +
+        transform_matrix.b +
+        "," +
+        transform_matrix.c +
+        "," +
+        transform_matrix.d +
+        "," +
+        transform_matrix.e +
+        "," +
+        transform_matrix.f +
+        ")";
+      this.$emit("updateTransform", {
+        id: this.params.id,
+        transform: transform,
+      });
+      this.params.transform = transform;
     },
   },
 };
