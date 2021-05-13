@@ -30,7 +30,7 @@
 const unit_circle_path = "M -1, 0 a 1, 1 0 1, 1 2, 0 a 1, 1 0 1, 1 -2, 0";
 const unit_square_path = "M -1 -1 H 1 V 1 H -1 Z";
 
-const identity_transform = "matrix(1,0,0,1,0,0)";
+//const identity_transform = "matrix(1,0,0,1,0,0)";
 
 export default {
   props: ["viewbox_params"],
@@ -78,6 +78,11 @@ export default {
       console.log(
         JSON.parse(JSON.stringify(this.$store.getters.svgElementAll))
       );
+      this.$buefy.snackbar.open({
+        message: "Path Added!",
+        type: "is-success",
+      });
+      this.custom_path = "";
     },
     // hacky helper function - 'renders' a path element to get its bbox
     getBBox(d) {

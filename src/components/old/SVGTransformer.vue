@@ -22,7 +22,7 @@ export default {
       // [0,0,1]
 
       // we want the new point: M*p:
-      // = [ax+cy+e, bx+dy+f, 0]
+      // = [ax+cy+e, bx+dy+f, 1]
       let x = this.bbox.x;
       let y = this.bbox.y;
 

@@ -1,90 +1,108 @@
 <template>
-  <svg :viewBox="viewBox" width="500px" height="500px">
+  <svg :viewBox="viewBox" width="800" height="800">
     <rect
-      x="0"
-      y="0"
-      width="400"
-      height="400"
+      :x="params.x"
+      :y="params.y"
+      :width="params.width"
+      :height="params.height"
       fill="gray"
-      @click="select(-1)"
+      @click="select(false)"
     />
     <SVGPath
       v-for="path in paths"
       :key="path.id"
       :params="path"
-      :container_params="params"
-      :selected="selected.id == path.id"
-      @click.native="select(path.id)"
-      @updateTransform="updateSelectedTransform"
+      :ref="path.id"
+      @click.left.native="select(path.id)"
     />
-    <SVGTransformer :bbox="selected.bbox" :transform="selected.transform" />
+    <SVGSelector
+      v-if="selected.id"
+      :id="selected.id"
+      :rotating="selected.rotating"
+    />
   </svg>
 </template>
 
 <script>
-import { gsap } from "gsap";
-import { Draggable } from "gsap/Draggable";
 import SVGPath from "./SVGPath";
-import SVGTransformer from "./SVGTransformer";
-
-gsap.registerPlugin(Draggable);
+import SVGSelector from "./SVGSelector";
 
 export default {
-  name: "Container",
-  props: ["elements"],
   components: {
     SVGPath,
-    SVGTransformer,
+    SVGSelector,
+  },
+  props: ["params"],
+  created() {
+    window.addEventListener("keydown", this.ctrlDown);
+    window.addEventListener("keyup", this.ctrlUp);
   },
   data() {
     return {
-      params: {
-        vb_x: 0,
-        vb_y: 0,
-        vb_width: 20,
-        vb_height: 20,
-      },
       selected: {
-        id: -1,
-        bbox: false,
-        transform: false,
+        id: false,
+        rotating: false,
       },
     };
   },
   computed: {
     viewBox() {
       return (
-        this.params.vb_x +
+        this.params.x +
         " " +
-        this.params.vb_y +
+        this.params.y +
         " " +
-        this.params.vb_width +
+        this.params.width +
         " " +
-        this.params.vb_height
+        this.params.height
       );
+    },
+    paths() {
+      return this.$store.getters.svgElementAll;
     },
   },
   methods: {
-    select(selected_id) {
-      // deselect current item
-      if (this.selected.id !== -1) {
-        this.paths[this.selected.id].selected = false;
+    select(id) {
+      if (id == this.selected.id) {
+        return;
       }
-
-      // select current item
-      if (selected_id !== -1) {
-        this.paths[selected_id].selected = true;
-        this.selected.bbox = this.paths[selected_id].bbox;
-        this.selected.transform = this.paths[selected_id].transform;
+      if (id) {
+        if (this.selected.id) {
+          const old_element = this.$refs[this.selected.id][0];
+          old_element.deselectPan();
+          old_element.deselectRotate();
+        }
+        const new_element = this.$refs[id][0];
+        new_element.selectPan();
+        this.selected.id = id;
       } else {
-        this.selected.bbox = false;
-        this.selected.transform = false;
+        // clicked background
+        if (this.selected.id) {
+          const old_element = this.$refs[this.selected.id][0];
+          old_element.deselectPan();
+          old_element.deselectRotate();
+        }
+        this.selected.id = false;
       }
-      this.selected.id = selected_id;
     },
-    updateSelectedTransform(path) {
-      if (path.id === this.selected.id) {
-        this.selected.transform = path.transform;
+    ctrlDown(event) {
+      if (event.key == "Control") {
+        if (this.selected.id && !this.selected.rotating) {
+          this.selected.rotating = true;
+          const selected_element = this.$refs[this.selected.id][0];
+          selected_element.deselectPan();
+          selected_element.selectRotate();
+        }
+      }
+    },
+    ctrlUp(event) {
+      if (event.key == "Control") {
+        this.selected.rotating = false;
+        if (this.selected.id) {
+          const selected_element = this.$refs[this.selected.id][0];
+          selected_element.deselectRotate();
+          selected_element.selectPan();
+        }
       }
     },
   },
@@ -93,5 +111,3 @@ export default {
 
 <style scoped>
 </style>
-
-

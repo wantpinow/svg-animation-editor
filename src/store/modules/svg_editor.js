@@ -1,3 +1,10 @@
+import svg_helpers from "../../js/svg_helpers"
+
+
+
+
+
+
 // Helper functions
 function get_element_positions_helper(ele, curr) {
     let res = {}
@@ -21,6 +28,11 @@ function get_element_positions_helper(ele, curr) {
 function get_element_positions(ele) {
     return get_element_positions_helper(ele, [])
 }
+
+
+
+
+
 
 // input elements (from database)
 let input_elements = [
@@ -58,12 +70,13 @@ let input_elements = [
 ]
 input_elements = []
 
-// Define stat
+// Define state
 const state = {
     user: false,
     user_token: false,
     svgElements: input_elements,
-    svgElementPositions: get_element_positions(input_elements)
+    svgElementPositions: get_element_positions(input_elements),
+    svgElementDragging: false
 }
 
 const getters = {
@@ -74,24 +87,38 @@ const getters = {
     svgElement: (state) => (id) => {
         const element_position = state.svgElementPositions[id]
         let parent_element = state.svgElements
+        let foundElement = null;
         for (let i = 0; i < element_position.length; i++) {
             if (i !== element_position.length - 1) {
                 parent_element = parent_element[element_position[i]].elements
             } else {
                 const e_index = element_position[i]
-                return parent_element[e_index]
+                foundElement = parent_element[e_index]
             }
         }
-    }
+        foundElement.bboxTransformed = svg_helpers.matrixTransformBBox(foundElement.bbox, foundElement.transform)
+        return foundElement
+    },
+    svgElementDragging: (state) => state.svgElementDragging
 }
 
 const actions = {
+    startDrag({ commit }) {
+        commit('setDrag', true)
+    },
+    endDrag({ commit }) {
+        commit('setDrag', false)
+    },
     logout({ commit }) {
         commit('setUserToken', false)
         commit('setUser', false)
     },
     svgElementAdd({ commit }, e) {
         commit('svgElementAdd', e)
+    },
+    svgElementUpdateTransform({ commit, getters }, { element_id, transform }) {
+        console.log(getters.svgElement(element_id).transform)
+        commit('svgElementSetTransform', { getters, element_id, transform })
     },
     svgElementDelete({ commit, dispatch }, id) {
         const element_position = state.svgElementPositions[id]
@@ -110,10 +137,15 @@ const actions = {
             }
         }
         commit('svgElementDeleteLeaf', id)
-    }
+    },
 }
 
 const mutations = {
+    setDrag: (state, dragging) => (state.svgElementDragging = dragging),
+    svgElementSetTransform: (state, { getters, element_id, transform }) => {
+        const element = getters.svgElement(element_id)
+        element.transform = transform
+    },
     setUserToken: (state, token) => (state.user_token = token),
     setUser: (state, user) => (state.user = user),
     svgElementAdd: (state, e) => {
@@ -133,7 +165,7 @@ const mutations = {
                 delete state.svgElementPositions[id]
             }
         }
-    }
+    },
 }
 
 export default {
